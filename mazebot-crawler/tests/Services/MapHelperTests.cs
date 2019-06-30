@@ -99,5 +99,39 @@ namespace MazebotCrawler.Tests.Services
             var start = new Coordinates(startX, startY);
             MapHelper.CanMoveWest(_canMoveMap, start).Should().Be(expected);
         }
+
+        [Fact]
+        public void ConvertToString_Should_Return_Correctly()
+        {
+            var floorPlan = new char[][]
+            {
+                new char[] {Map.OCCPD, Map.EMPTY, Map.START, Map.DESTN},
+                new char[] {Map.EMPTY, Map.EMPTY, Map.OCCPD, Map.OCCPD},
+                new char[] {Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY}
+            };
+
+            var expected = $"[{Map.OCCPD}][{Map.EMPTY}][{Map.START}][{Map.DESTN}]\n[{Map.EMPTY}][{Map.EMPTY}][{Map.OCCPD}][{Map.OCCPD}]\n[{Map.EMPTY}][{Map.EMPTY}][{Map.EMPTY}][{Map.EMPTY}]\n";
+
+            var actual = MapHelper.ConvertToString(floorPlan);
+
+            actual.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("EENES", "EEE")]
+        [InlineData("NWNWS", "NWW")]
+        [InlineData("SENNN", "ENN")]
+        [InlineData("SSWNW", "SWW")]
+        [InlineData("SESWS", "SSS")]
+        [InlineData("SWSES", "SSS")]
+        [InlineData("NEESENENWNWSWWWSS", "W")]
+        [InlineData("ENENENNWNWNNWWSS", "ENENENNWNWNNWWSS")]
+        [InlineData("Unknown format", "Unknown format")]
+        [InlineData(null, null)]
+        public void SimplifyPath_Should_Return_Correctly(string path, string expected)
+        {
+            var actual = MapHelper.SimplifyPath(path);
+            actual.Should().Be(expected);
+        }
     }
 }

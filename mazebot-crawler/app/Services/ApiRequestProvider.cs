@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 
 namespace MazebotCrawler.Services
 {
@@ -16,6 +17,16 @@ namespace MazebotCrawler.Services
 
     public class ApiRequestProvider : IApiRequestProvider
     {
+        private readonly JsonSerializerSettings _serializerSettings;
+
+        public ApiRequestProvider()
+        {
+            _serializerSettings = new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver()
+            };
+        }
+
         public HttpRequestMessage CreateGetRequest(string url, Dictionary<string, string> headers = null, Dictionary<string, string> queries = null)
         {
             return CreateRequest(HttpMethod.Get, url, headers: headers, queries: queries);
@@ -52,7 +63,7 @@ namespace MazebotCrawler.Services
 
             if (content != null)
             {
-                var body = JsonConvert.SerializeObject(content);
+                var body = JsonConvert.SerializeObject(content, _serializerSettings);
                 message.Content = new StringContent(body);
                 message.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
             }

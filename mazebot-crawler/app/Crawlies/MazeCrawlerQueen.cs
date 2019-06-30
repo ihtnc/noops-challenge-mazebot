@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using MazebotCrawler.Crawlies.Models;
+using MazebotCrawler.Services;
 using MazebotCrawler.Services.Models;
 
 namespace MazebotCrawler.Crawlies
@@ -32,7 +32,7 @@ namespace MazebotCrawler.Crawlies
     public interface IMazeCrawlerCoordinator
     {
         ISwarmCoordinator RequestSwarm(IMazeCrawlerState requestor);
-        void ReportArrival(IMazeCrawlerState requestor);
+        void Debrief(IMazeCrawlerState requestor);
         ILogger Logger { get; }
     }
 
@@ -43,7 +43,6 @@ namespace MazebotCrawler.Crawlies
         private Map _map;
 
         private readonly IMazeCrawlerSpawner _spawner;
-        private readonly CancellationTokenSource _cancellationSource;
 
         public MazeCrawlerQueen(IMazeCrawlerSpawner spawner, ILogger<MazeCrawlerQueen> logger)
         {
@@ -51,7 +50,6 @@ namespace MazebotCrawler.Crawlies
             Logger = logger;
 
             _spawner = spawner;
-            _cancellationSource = new CancellationTokenSource();
         }
 
         public void ScanMap(Coordinates start, Coordinates destination, Map map)
@@ -59,6 +57,8 @@ namespace MazebotCrawler.Crawlies
             _start = start;
             _destination = destination;
             _map = CopyMap(map);
+
+            Trace($"Scanned map:\n{MapHelper.ConvertToString(map.FloorPlan)}");
         }
 
         public async Task<NavigationDetails> Navigate()
@@ -74,7 +74,9 @@ namespace MazebotCrawler.Crawlies
             };
 
             var crawler = _spawner.Spawn(context);
-            return await crawler.Navigate(_cancellationSource.Token);
+            var response = await crawler.Navigate();
+            if (response.Arrived) { response.PathTaken = MapHelper.SimplifyPath(response.PathTaken); }
+            return response;
         }
 
         public string Id { get; }
@@ -88,25 +90,28 @@ namespace MazebotCrawler.Crawlies
 
         public ISwarmCoordinator RequestSwarm(IMazeCrawlerState requestor)
         {
+            Trace($"Crawler {requestor.Id} requested for a swarm.");
             UpdateMap(requestor.CrawlerMap);
             return this;
         }
 
-        public void ReportArrival(IMazeCrawlerState requestor)
+        public void Debrief(IMazeCrawlerState requestor)
         {
+            Trace($"Updating findings from Crawler {requestor.Id}.");
             UpdateMap(requestor.CrawlerMap);
-            _cancellationSource.Cancel();
         }
 
         public IEnumerable<IMazeCrawler> GetSwarm(IMazeCrawlerState requestor)
         {
+            Trace($"Checking possible routes from crawler {requestor.Id} location.");
+
             // Determines the next possible Direction that can be done from the requestor's current Coordinates.
             // Create a MazeCrawler for each Direction.
             var nextSteps = new List<Direction>();
-            if(requestor.CanMove(Direction.North)) { nextSteps.Add(Direction.North); }
-            if(requestor.CanMove(Direction.South)) { nextSteps.Add(Direction.South); }
-            if(requestor.CanMove(Direction.East)) { nextSteps.Add(Direction.East); }
-            if(requestor.CanMove(Direction.West)) { nextSteps.Add(Direction.West); }
+            if(requestor.CanMove(Direction.North)) { Trace($"Crawler {requestor.Id} can move North."); nextSteps.Add(Direction.North); }
+            if(requestor.CanMove(Direction.South)) { Trace($"Crawler {requestor.Id} can move South."); nextSteps.Add(Direction.South); }
+            if(requestor.CanMove(Direction.East)) { Trace($"Crawler {requestor.Id} can move East."); nextSteps.Add(Direction.East); }
+            if(requestor.CanMove(Direction.West)) { Trace($"Crawler {requestor.Id} can move West."); nextSteps.Add(Direction.West); }
 
             var newStart = new Coordinates(requestor.CurrentX, requestor.CurrentY);
             var newMap = MaskMap();
@@ -122,6 +127,7 @@ namespace MazebotCrawler.Crawlies
                     NavigationMode = requestor.NavigationMode
                 };
                 var crawler = _spawner.Spawn(context);
+                Trace($"Moving crawler {requestor.Id} into position.");
                 crawler.Move(direction);
                 crawlers.Add(crawler);
             }
@@ -139,9 +145,9 @@ namespace MazebotCrawler.Crawlies
                     for (var j = 0; j < _map.FloorPlan[i].Length; j++)
                     {
                         // Only update the map with TRACK data.
-                        if (trackUpdates.FloorPlan[i][j] != Map.TRACK) { continue; }
-
-                        _map.FloorPlan[i][j] = Map.TRACK;
+                        if (trackUpdates.FloorPlan[i][j] == Map.MOVEN || trackUpdates.FloorPlan[i][j] == Map.MOVES || trackUpdates.FloorPlan[i][j] == Map.MOVEE || trackUpdates.FloorPlan[i][j] == Map.MOVEW) {
+                            _map.FloorPlan[i][j] = trackUpdates.FloorPlan[i][j];
+                        }
                     }
                 }
             }
@@ -165,9 +171,11 @@ namespace MazebotCrawler.Crawlies
                         var isEmpty = _map.FloorPlan[i][j] == Map.EMPTY;
                         var isStart = _map.FloorPlan[i][j] == Map.START;
                         var isDestn = _map.FloorPlan[i][j] == Map.DESTN;
-                        masked[i][j] = isEmpty || isStart || isDestn ? Map.EMPTY : Map.OCCPD;
+                        var isCrawler = _map.FloorPlan[i][j] == Map.CRWLR;
+                        masked[i][j] = isEmpty || isStart || isDestn || isCrawler ? Map.EMPTY : Map.OCCPD;
                     }
                 }
+
                 return new Map(masked);
             }
         }
@@ -189,6 +197,12 @@ namespace MazebotCrawler.Crawlies
                 }
             }
             return new Map(copy);
+        }
+
+        private void Trace(string message)
+        {
+            var queen = $"Queen={Id}";
+            Logger.LogTrace($"{queen}:{message}");
         }
     }
 }

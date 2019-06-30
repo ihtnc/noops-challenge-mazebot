@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using MazebotCrawler.Crawlies;
 using MazebotCrawler.Crawlies.Models;
@@ -42,7 +41,8 @@ namespace MazebotCrawler.Tests.Crawlies
             var y = 3;
             var context = new MazeCrawlerContext
             {
-                Start = new Coordinates(x, y)
+                Start = new Coordinates(x, y),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
 
             var crawler = new MazeCrawler(context);
@@ -56,11 +56,12 @@ namespace MazebotCrawler.Tests.Crawlies
         {
             var map = new Map(new char[][]
             {
-                new [] { 'X' }
+                new [] { Map.OCCPD }
             });
             var context = new MazeCrawlerContext
             {
-                NavigationMap = map
+                NavigationMap = map,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
 
             var crawler = new MazeCrawler(context);
@@ -75,7 +76,8 @@ namespace MazebotCrawler.Tests.Crawlies
             {
                 Start = new Coordinates(6, 4),
                 Destination = new Coordinates(6, 4),
-                NavigationMap = new Map(new char[0][])
+                NavigationMap = new Map(new char[0][]),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -99,7 +101,8 @@ namespace MazebotCrawler.Tests.Crawlies
                     new char[] {Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.OCCPD},
                     new char[] {Map.OCCPD, Map.EMPTY, Map.EMPTY, Map.EMPTY},
                     new char[] {Map.OCCPD, Map.EMPTY, Map.OCCPD, Map.OCCPD}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -122,7 +125,8 @@ namespace MazebotCrawler.Tests.Crawlies
                     new char[] {Map.EMPTY, Map.OCCPD, Map.EMPTY},
                     new char[] {Map.OCCPD, Map.OCCPD, Map.EMPTY},
                     new char[] {Map.EMPTY, Map.EMPTY, Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -148,7 +152,8 @@ namespace MazebotCrawler.Tests.Crawlies
                     new char[] {Map.EMPTY, Map.EMPTY, Map.EMPTY},
                     new char[] {Map.EMPTY, Map.EMPTY, Map.EMPTY},
                     new char[] {Map.EMPTY, Map.EMPTY, Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -183,17 +188,15 @@ namespace MazebotCrawler.Tests.Crawlies
                     new [] {Map.OCCPD},
                     new [] {Map.EMPTY}
                 }),
-                NavigationMode = mode
+                NavigationMode = mode,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().Be(arrived);
-                response.PathTaken.Should().Be(path);
-            }
+            response.Arrived.Should().Be(arrived);
+            response.PathTaken.Should().Be(path);
         }
 
         [Theory]
@@ -215,17 +218,15 @@ namespace MazebotCrawler.Tests.Crawlies
                 {
                     new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.OCCPD, Map.EMPTY}
                 }),
-                NavigationMode = mode
+                NavigationMode = mode,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().Be(arrived);
-                response.PathTaken.Should().Be(path);
-            }
+            response.Arrived.Should().Be(arrived);
+            response.PathTaken.Should().Be(path);
         }
 
         [Theory]
@@ -252,17 +253,15 @@ namespace MazebotCrawler.Tests.Crawlies
                     new [] {Map.EMPTY, Map.OCCPD, Map.OCCPD, Map.OCCPD, Map.EMPTY},
                     new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY}
                 }),
-                NavigationMode = mode
+                NavigationMode = mode,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().Be(arrived);
-                response.PathTaken.Should().Be(path);
-            }
+            response.Arrived.Should().Be(arrived);
+            response.PathTaken.Should().Be(path);
         }
 
         [Theory]
@@ -290,17 +289,15 @@ namespace MazebotCrawler.Tests.Crawlies
                     new [] {Map.EMPTY, Map.OCCPD, Map.EMPTY},
                     new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY}
                 }),
-                NavigationMode = CrawlerNavigationMode.Scout
+                NavigationMode = CrawlerNavigationMode.Scout,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().BeTrue();
-                response.PathTaken.Should().Be(path);
-            }
+            response.Arrived.Should().BeTrue();
+            response.PathTaken.Should().Be(path);
         }
 
         [Fact]
@@ -321,17 +318,15 @@ namespace MazebotCrawler.Tests.Crawlies
                     new [] {Map.OCCPD, Map.OCCPD, Map.EMPTY},
                     new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY}
                 }),
-                NavigationMode = CrawlerNavigationMode.Scout
+                NavigationMode = CrawlerNavigationMode.Scout,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().BeTrue();
-                response.PathTaken.Should().Be("EESSSSSSSW");
-            }
+            response.Arrived.Should().BeTrue();
+            response.PathTaken.Should().Be("EESSSSSSSW");
         }
 
         [Theory]
@@ -358,17 +353,15 @@ namespace MazebotCrawler.Tests.Crawlies
                     new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY},
                     new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY}
                 }),
-                NavigationMode = CrawlerNavigationMode.Scout
+                NavigationMode = CrawlerNavigationMode.Scout,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().BeTrue();
-                response.PathTaken.Should().Be(expected);
-            }
+            response.Arrived.Should().BeTrue();
+            response.PathTaken.Should().Be(expected);
         }
 
         [Fact]
@@ -386,17 +379,53 @@ namespace MazebotCrawler.Tests.Crawlies
                     new [] {Map.EMPTY, Map.OCCPD, Map.OCCPD, Map.OCCPD, Map.OCCPD, Map.OCCPD, Map.EMPTY},
                     new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY, Map.EMPTY}
                 }),
-                NavigationMode = CrawlerNavigationMode.Scout
+                NavigationMode = CrawlerNavigationMode.Scout,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().BeTrue();
-                response.PathTaken.Should().Be("WWSSSSEEEEEENNN");
-            }
+            response.Arrived.Should().BeTrue();
+            response.PathTaken.Should().Be("WWSSSSEEEEEENNN");
+        }
+
+        [Theory]
+        [InlineData(0, 0, 2, 2)]
+        [InlineData(0, 3, 2, 1)]
+        public async void Navigate_On_Swarm_Mode_Should_Call_IMazeCrawlerCoordinator_Debrief(int startX, int startY, int destinationX, int destinationY)
+        {
+            var task = Task.Run(() => { Task.Delay(500); return new NavigationDetails { Arrived = false }; });
+            var crawler = Substitute.For<IMazeCrawler>();
+            crawler.Navigate().Returns(task);
+
+            var crawlers = new [] {crawler};
+
+            var swarmCoordinator = Substitute.For<ISwarmCoordinator>();
+            swarmCoordinator.GetSwarm(Arg.Any<IMazeCrawlerState>()).Returns(crawlers);
+
+            var crawlerCoordinator = Substitute.For<IMazeCrawlerCoordinator>();
+            crawlerCoordinator.RequestSwarm(Arg.Any<IMazeCrawlerState>()).Returns(swarmCoordinator);
+
+            var context = new MazeCrawlerContext
+            {
+                Start = new Coordinates(startX, startY),
+                Destination = new Coordinates(destinationX, destinationY),
+                NavigationMap = new Map(new char[][]
+                {
+                    new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY},
+                    new [] {Map.OCCPD, Map.OCCPD, Map.EMPTY},
+                    new [] {Map.EMPTY, Map.OCCPD, Map.EMPTY},
+                    new [] {Map.EMPTY, Map.EMPTY, Map.EMPTY}
+                }),
+                NavigationMode = CrawlerNavigationMode.Swarm,
+                Coordinator = crawlerCoordinator
+            };
+            var mazeCrawler = new MazeCrawler(context);
+
+            await mazeCrawler.Navigate();
+
+            crawlerCoordinator.Received(1).Debrief(mazeCrawler);
         }
 
         [Theory]
@@ -426,10 +455,7 @@ namespace MazebotCrawler.Tests.Crawlies
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                await crawler.Navigate(source.Token);
-            }
+            await crawler.Navigate();
 
             crawlerCoordinator.Received(numberOfCalls).RequestSwarm(crawler);
         }
@@ -461,10 +487,7 @@ namespace MazebotCrawler.Tests.Crawlies
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                await crawler.Navigate(source.Token);
-            }
+            await crawler.Navigate();
 
             swarmCoordinator.Received(numberOfCalls).GetSwarm(crawler);
         }
@@ -473,8 +496,11 @@ namespace MazebotCrawler.Tests.Crawlies
         public async void Navigate_On_Swarm_Mode_Should_Call_Each_IMazeCrawler_Navigate()
         {
             var crawler1 = Substitute.For<IMazeCrawler>();
+            crawler1.Navigate().Returns(Task.FromResult(new NavigationDetails()));
             var crawler2 = Substitute.For<IMazeCrawler>();
+            crawler2.Navigate().Returns(Task.FromResult(new NavigationDetails()));
             var crawler3 = Substitute.For<IMazeCrawler>();
+            crawler3.Navigate().Returns(Task.FromResult(new NavigationDetails()));
             var crawlers = new [] {crawler1, crawler2, crawler3};
             var swarmCoordinator = Substitute.For<ISwarmCoordinator>();
             swarmCoordinator.GetSwarm(Arg.Any<IMazeCrawlerState>()).Returns(crawlers);
@@ -496,30 +522,27 @@ namespace MazebotCrawler.Tests.Crawlies
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                await crawler.Navigate(source.Token);
+            await crawler.Navigate();
 
-                await crawler1.Received(1).Navigate(source.Token);
-                await crawler2.Received(1).Navigate(source.Token);
-                await crawler3.Received(1).Navigate(source.Token);
-            }
+            await crawler1.Received(1).Navigate();
+            await crawler2.Received(1).Navigate();
+            await crawler3.Received(1).Navigate();
         }
 
         [Fact]
         public async void Navigate_On_Swarm_Mode_Should_Return_Correctly_When_All_Tasks_Completes_Without_Arrived_True_Result()
         {
-            var task1 = Task.Run(async () => { await Task.Delay(300); return new NavigationDetails { Arrived = false }; });
+            var task1 = Task.Run(() => { Task.Delay(300); return new NavigationDetails { Arrived = false }; });
             var crawler1 = Substitute.For<IMazeCrawler>();
-            crawler1.Navigate(Arg.Any<CancellationToken>()).Returns(task1);
+            crawler1.Navigate().Returns(task1);
 
-            var task2 = Task.Run(async () => { await Task.Delay(100); return new NavigationDetails { Arrived = false }; });
+            var task2 = Task.Run(() => { Task.Delay(100); return new NavigationDetails { Arrived = false }; });
             var crawler2 = Substitute.For<IMazeCrawler>();
-            crawler2.Navigate(Arg.Any<CancellationToken>()).Returns(task2);
+            crawler2.Navigate().Returns(task2);
 
-            var task3 = Task.Run(async () => { await Task.Delay(200); return new NavigationDetails { Arrived = false }; });
+            var task3 = Task.Run(() => { Task.Delay(200); return new NavigationDetails { Arrived = false }; });
             var crawler3 = Substitute.For<IMazeCrawler>();
-            crawler3.Navigate(Arg.Any<CancellationToken>()).Returns(task3);
+            crawler3.Navigate().Returns(task3);
 
             var crawlers = new [] {crawler1, crawler2, crawler3};
 
@@ -543,29 +566,26 @@ namespace MazebotCrawler.Tests.Crawlies
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Arrived.Should().BeFalse();
-            }
+            response.Arrived.Should().BeFalse();
         }
 
         [Fact]
         public async void Navigate_On_Swarm_Mode_Should_Return_Correctly_When_One_Task_Completes_With_Arrived_True_Result()
         {
             var result = new NavigationDetails { Arrived = true, PathTaken = "temp" };
-            var task1 = Task.Run(async () => { await Task.Delay(200); return result; });
+            var task1 = Task.Run(() => { Task.Delay(200); return result; });
             var crawler1 = Substitute.For<IMazeCrawler>();
-            crawler1.Navigate(Arg.Any<CancellationToken>()).Returns(task1);
+            crawler1.Navigate().Returns(task1);
 
-            var task2 = Task.Run(async () => { await Task.Delay(300); return new NavigationDetails { Arrived = false }; });
+            var task2 = Task.Run(() => { Task.Delay(300); return new NavigationDetails { Arrived = false }; });
             var crawler2 = Substitute.For<IMazeCrawler>();
-            crawler2.Navigate(Arg.Any<CancellationToken>()).Returns(task2);
+            crawler2.Navigate().Returns(task2);
 
-            var task3 = Task.Run(async () => { await Task.Delay(100); return new NavigationDetails { Arrived = false }; });
+            var task3 = Task.Run(() => { Task.Delay(100); return new NavigationDetails { Arrived = false }; });
             var crawler3 = Substitute.For<IMazeCrawler>();
-            crawler3.Navigate(Arg.Any<CancellationToken>()).Returns(task3);
+            crawler3.Navigate().Returns(task3);
 
             var crawlers = new [] {crawler1, crawler2, crawler3};
 
@@ -589,30 +609,27 @@ namespace MazebotCrawler.Tests.Crawlies
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Should().BeEquivalentTo(result);
-            }
+            response.Should().BeEquivalentTo(result);
         }
 
         [Fact]
         public async void Navigate_On_Swarm_Mode_Should_Return_The_First_Task_That_Completes_With_Arrived_True_Result()
         {
             var result1 = new NavigationDetails { Arrived = true, PathTaken = "result1" };
-            var task1 = Task.Run(async () => { await Task.Delay(300); return result1; });
+            var task1 = Task.Run(() => { Task.Delay(300); return result1; });
             var crawler1 = Substitute.For<IMazeCrawler>();
-            crawler1.Navigate(Arg.Any<CancellationToken>()).Returns(task1);
+            crawler1.Navigate().Returns(task1);
 
             var result2 = new NavigationDetails { Arrived = true, PathTaken = "result2" };
-            var task2 = Task.Run(async () => { await Task.Delay(5000); return result2; });
+            var task2 = Task.Run(() => { Task.Delay(500); return result2; });
             var crawler2 = Substitute.For<IMazeCrawler>();
-            crawler2.Navigate(Arg.Any<CancellationToken>()).Returns(task2);
+            crawler2.Navigate().Returns(task2);
 
-            var task3 = Task.Run(async () => { await Task.Delay(100); return new NavigationDetails { Arrived = false }; });
+            var task3 = Task.Run(() => { Task.Delay(100); return new NavigationDetails { Arrived = false }; });
             var crawler3 = Substitute.For<IMazeCrawler>();
-            crawler3.Navigate(Arg.Any<CancellationToken>()).Returns(task3);
+            crawler3.Navigate().Returns(task3);
 
             var crawlers = new [] {crawler1, crawler2, crawler3};
 
@@ -636,53 +653,9 @@ namespace MazebotCrawler.Tests.Crawlies
             };
             var crawler = new MazeCrawler(context);
 
-            using(var source = new CancellationTokenSource())
-            {
-                crawlerCoordinator.When(c => c.ReportArrival(Arg.Any<IMazeCrawlerState>())).Do((x) => { source.Cancel(); });
-                var response = await crawler.Navigate(source.Token);
+            var response = await crawler.Navigate();
 
-                response.Should().BeEquivalentTo(result1);
-            }
-        }
-
-        [Theory]
-        [InlineData(true, 1)]
-        [InlineData(false, 0)]
-        public async void Navigate_On_Swarm_Mode_Should_Call_IMazeCrawlerCoordinator_ReportArrival_When_A_Task_Completes_With_Arrived_True_Result(bool arrived, int numberOfCalls)
-        {
-            var result = new NavigationDetails { Arrived = arrived };
-            var task = Task.Run(async () => { await Task.Delay(100); return result; });
-            var crawler1 = Substitute.For<IMazeCrawler>();
-            crawler1.Navigate(Arg.Any<CancellationToken>()).Returns(task);
-
-            var crawlers = new [] {crawler1};
-
-            var swarmCoordinator = Substitute.For<ISwarmCoordinator>();
-            swarmCoordinator.GetSwarm(Arg.Any<IMazeCrawlerState>()).Returns(crawlers);
-
-            var crawlerCoordinator = Substitute.For<IMazeCrawlerCoordinator>();
-            crawlerCoordinator.RequestSwarm(Arg.Any<IMazeCrawlerState>()).Returns(swarmCoordinator);
-
-            var context = new MazeCrawlerContext
-            {
-                Start = new Coordinates(0, 0),
-                Destination = new Coordinates(0, 1),
-                NavigationMap = new Map(new char[][]
-                {
-                    new [] {Map.EMPTY, Map.EMPTY},
-                    new [] {Map.EMPTY, Map.OCCPD}
-                }),
-                NavigationMode = CrawlerNavigationMode.Swarm,
-                Coordinator = crawlerCoordinator
-            };
-            var crawler = new MazeCrawler(context);
-
-            using(var source = new CancellationTokenSource())
-            {
-                await crawler.Navigate(source.Token);
-
-                crawlerCoordinator.Received(numberOfCalls).ReportArrival(crawler);
-            }
+            response.Should().BeEquivalentTo(result1);
         }
 
         [Theory]
@@ -700,7 +673,8 @@ namespace MazebotCrawler.Tests.Crawlies
             {
                 Start = new Coordinates(startX, startY),
                 Destination = new Coordinates(5, 5),
-                NavigationMap = _canMoveMap
+                NavigationMap = _canMoveMap,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -727,7 +701,8 @@ namespace MazebotCrawler.Tests.Crawlies
             var context = new MazeCrawlerContext
             {
                 Start = new Coordinates(startX, startY),
-                NavigationMap = _canMoveMap
+                NavigationMap = _canMoveMap,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
             crawler.CanMove(direction).Should().Be(expected);
@@ -747,7 +722,8 @@ namespace MazebotCrawler.Tests.Crawlies
             var context = new MazeCrawlerContext
             {
                 Start = new Coordinates(currentX, currentY),
-                NavigationMap = _moveMap
+                NavigationMap = _moveMap,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -771,7 +747,8 @@ namespace MazebotCrawler.Tests.Crawlies
             var context = new MazeCrawlerContext
             {
                 Start = new Coordinates(currentX, currentY),
-                NavigationMap = _moveMap
+                NavigationMap = _moveMap,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -793,7 +770,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 {
                     new [] {Map.EMPTY},
                     new [] {Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -812,7 +790,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 {
                     new [] {Map.EMPTY},
                     new [] {Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -837,7 +816,8 @@ namespace MazebotCrawler.Tests.Crawlies
             var context = new MazeCrawlerContext
             {
                 Start = new Coordinates(currentX, currentY),
-                NavigationMap = _moveMap
+                NavigationMap = _moveMap,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -859,7 +839,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 {
                     new [] {Map.EMPTY},
                     new [] {Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -878,7 +859,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 {
                     new [] {Map.EMPTY},
                     new [] {Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -903,7 +885,8 @@ namespace MazebotCrawler.Tests.Crawlies
             var context = new MazeCrawlerContext
             {
                 Start = new Coordinates(currentX, currentY),
-                NavigationMap = _moveMap
+                NavigationMap = _moveMap,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -924,7 +907,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 NavigationMap = new Map(new char[][]
                 {
                     new [] {Map.EMPTY, Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -942,7 +926,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 NavigationMap = new Map(new char[][]
                 {
                     new [] {Map.EMPTY, Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -967,7 +952,8 @@ namespace MazebotCrawler.Tests.Crawlies
             var context = new MazeCrawlerContext
             {
                 Start = new Coordinates(currentX, currentY),
-                NavigationMap = _moveMap
+                NavigationMap = _moveMap,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -988,7 +974,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 NavigationMap = new Map(new char[][]
                 {
                     new [] {Map.EMPTY, Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 
@@ -1006,7 +993,8 @@ namespace MazebotCrawler.Tests.Crawlies
                 NavigationMap = new Map(new char[][]
                 {
                     new [] {Map.EMPTY, Map.EMPTY}
-                })
+                }),
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
             var crawler = new MazeCrawler(context);
 

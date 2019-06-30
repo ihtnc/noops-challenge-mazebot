@@ -3,6 +3,7 @@ using MazebotCrawler.Crawlies.Models;
 using MazebotCrawler.Services.Models;
 using Xunit;
 using FluentAssertions;
+using NSubstitute;
 
 namespace MazebotCrawler.Tests.Crawlies
 {
@@ -23,9 +24,10 @@ namespace MazebotCrawler.Tests.Crawlies
                 Start = new Coordinates(1, 0),
                 NavigationMap = new Map(new char[1][]
                 {
-                    new char[] {'X', ' ', ' ', 'X'}
+                    new char[] {Map.OCCPD, Map.EMPTY, Map.EMPTY, Map.OCCPD}
                 }),
-                NavigationMode = CrawlerNavigationMode.Swarm
+                NavigationMode = CrawlerNavigationMode.Swarm,
+                Coordinator = Substitute.For<IMazeCrawlerCoordinator>()
             };
 
             var crawler = (MazeCrawler)_spwaner.Spawn(context);

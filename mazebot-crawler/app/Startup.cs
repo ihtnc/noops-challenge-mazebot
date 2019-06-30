@@ -1,10 +1,11 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using MazebotCrawler.Crawlies;
 using MazebotCrawler.Middlewares;
+using MazebotCrawler.Repositories;
 using MazebotCrawler.Services;
 
 namespace MazebotCrawler
@@ -27,8 +28,13 @@ namespace MazebotCrawler
 
                 .AddHttpClient()
 
+                .AddSingleton<IMazebotSolverStatusRepository, InMemoryStatusRepository>()
+
                 .AddTransient<IApiRequestProvider, ApiRequestProvider>()
                 .AddTransient<IApiClient, ApiClient>()
+                .AddTransient<INoOpsApiClient, NoOpsApiClient>()
+                .AddTransient<IMazebotSolver, MazebotSolver>()
+
                 .AddTransient<IMazeCrawlerQueen, MazeCrawlerQueen>()
                 .AddTransient<IMazeCrawlerSpawner, MazeCrawlerSpawner>()
 

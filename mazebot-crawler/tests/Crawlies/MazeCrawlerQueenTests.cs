@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Threading;
 using Microsoft.Extensions.Logging;
 using MazebotCrawler.Crawlies;
 using MazebotCrawler.Crawlies.Models;
@@ -34,7 +32,7 @@ namespace MazebotCrawler.Tests.Crawlies
             var destination = new Coordinates(3, 4);
             var floorPlan = new char[1][]
             {
-                new char[] {'X', ' ', 'A', 'B'}
+                new char[] {Map.OCCPD, Map.EMPTY, Map.START, Map.DESTN}
             };
             var map = new Map(floorPlan);
 
@@ -57,8 +55,11 @@ namespace MazebotCrawler.Tests.Crawlies
 
             _queen.ScanMap(start, destination, map);
 
+            var crawler = Substitute.For<IMazeCrawler>();
+            crawler.Navigate().Returns(new NavigationDetails());
+
             MazeCrawlerContext context = null;
-            _spawner.Spawn(Arg.Do<MazeCrawlerContext>(c => context = c));
+            _spawner.Spawn(Arg.Do<MazeCrawlerContext>(c => context = c)).Returns(crawler);
 
             await _queen.Navigate();
 
@@ -74,18 +75,21 @@ namespace MazebotCrawler.Tests.Crawlies
         {
             var floorPlan = new char[1][]
             {
-                new char[] {'X', 'O', 'A', 'B'}
+                new char[] {Map.OCCPD, Map.MOVEW, Map.START, Map.DESTN}
             };
             var map = new Map(floorPlan);
             var maskedFloorPlan = new char[1][]
             {
-                new char[] {'X', 'X', ' ', ' '}
+                new char[] {Map.OCCPD, Map.OCCPD, Map.EMPTY, Map.EMPTY}
             };
 
             _queen.ScanMap(new Coordinates(1, 2), new Coordinates(3, 4), map);
 
+            var crawler = Substitute.For<IMazeCrawler>();
+            crawler.Navigate().Returns(new NavigationDetails());
+
             MazeCrawlerContext context = null;
-            _spawner.Spawn(Arg.Do<MazeCrawlerContext>(c => context = c));
+            _spawner.Spawn(Arg.Do<MazeCrawlerContext>(c => context = c)).Returns(crawler);
 
             await _queen.Navigate();
 
@@ -100,13 +104,33 @@ namespace MazebotCrawler.Tests.Crawlies
 
             var expected = new NavigationDetails();
             var crawler = Substitute.For<IMazeCrawler>();
-            crawler.Navigate(Arg.Any<CancellationToken>()).Returns(expected);
+            crawler.Navigate().Returns(expected);
             _spawner.Spawn(Arg.Any<MazeCrawlerContext>()).Returns(crawler);
 
             var response = await _queen.Navigate();
 
-            await crawler.Received(1).Navigate(Arg.Any<CancellationToken>());
+            await crawler.Received(1).Navigate();
             response.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(true, "NNESE", "NEE")]
+        [InlineData(false, "NNESE", "NNESE")]
+        public async void Navigate_Should_Simplify_Path_Taken_By_Crawler_If_It_Arrived(bool arrived, string pathTaken, string expectedPath)
+        {
+            _queen.ScanMap(new Coordinates(1, 2), new Coordinates(3, 4), new Map(new char[0][]));
+
+            var crawler = Substitute.For<IMazeCrawler>();
+            crawler.Navigate().Returns(new NavigationDetails
+            {
+                Arrived = arrived,
+                PathTaken = pathTaken
+            });
+            _spawner.Spawn(Arg.Any<MazeCrawlerContext>()).Returns(crawler);
+
+            var response = await _queen.Navigate();
+
+            response.PathTaken.Should().Be(expectedPath);
         }
 
         [Fact]
@@ -114,7 +138,7 @@ namespace MazebotCrawler.Tests.Crawlies
         {
             var floorPlan = new char[1][]
             {
-                new char[] {'X', ' ', 'A', 'B'}
+                new char[] {Map.OCCPD, Map.EMPTY, Map.START, Map.DESTN}
             };
             var map = new Map(floorPlan);
 
@@ -122,7 +146,7 @@ namespace MazebotCrawler.Tests.Crawlies
 
             var crawlerFloorPlan = new char[1][]
             {
-                new char[] {'X', 'O', 'A', 'B'}
+                new char[] {Map.OCCPD, Map.MOVEE, Map.START, Map.DESTN}
             };
             var crawlerMap = new Map(crawlerFloorPlan);
             var crawlerState = Substitute.For<IMazeCrawlerState>();
@@ -138,7 +162,7 @@ namespace MazebotCrawler.Tests.Crawlies
         {
             var floorPlan = new char[1][]
             {
-                new char[] {'X', ' ', 'A', 'B'}
+                new char[] {Map.OCCPD, Map.EMPTY, Map.START, Map.DESTN}
             };
             var map = new Map(floorPlan);
 
@@ -153,11 +177,11 @@ namespace MazebotCrawler.Tests.Crawlies
         }
 
         [Fact]
-        public void ReportArrival_Should_Update_Map_Based_On_CrawlerMap()
+        public void Debrief_Should_Update_Map_Based_On_CrawlerMap()
         {
             var floorPlan = new char[1][]
             {
-                new char[] {'X', ' ', 'A', 'B'}
+                new char[] {Map.OCCPD, Map.EMPTY, Map.START, Map.DESTN}
             };
             var map = new Map(floorPlan);
 
@@ -165,13 +189,13 @@ namespace MazebotCrawler.Tests.Crawlies
 
             var crawlerFloorPlan = new char[1][]
             {
-                new char[] {'X', 'O', 'A', 'B'}
+                new char[] {Map.OCCPD, Map.MOVEW, Map.START, Map.DESTN}
             };
             var crawlerMap = new Map(crawlerFloorPlan);
             var crawlerState = Substitute.For<IMazeCrawlerState>();
             crawlerState.CrawlerMap.Returns(crawlerMap);
 
-            _queen.ReportArrival(crawlerState);
+            _queen.Debrief(crawlerState);
 
             _queen.Map.FloorPlan.Should().BeEquivalentTo(crawlerFloorPlan, o => o.WithStrictOrdering());
         }
@@ -185,9 +209,9 @@ namespace MazebotCrawler.Tests.Crawlies
         {
             var start = new Coordinates(1, 2);
             var destination = new Coordinates(3, 4);
-            var floorPlan = new char[1][] { new char[] {'X', 'O', 'A', 'B'} };
+            var floorPlan = new char[1][] { new char[] {Map.OCCPD, Map.MOVEW, Map.START, Map.DESTN} };
             var map = new Map(floorPlan);
-            var maskedFloorPlan = new char[1][] { new char[] {'X', 'X', ' ', ' '} };
+            var maskedFloorPlan = new char[1][] { new char[] {Map.OCCPD, Map.OCCPD, Map.EMPTY, Map.EMPTY} };
 
             _queen.ScanMap(start, destination, map);
 
