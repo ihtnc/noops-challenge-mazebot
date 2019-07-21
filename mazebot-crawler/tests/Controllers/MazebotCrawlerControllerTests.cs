@@ -238,5 +238,109 @@ namespace MazebotCrawler.Tests.Controllers
 
             actual.Should().BeOfType<NotFoundResult>();
         }
+
+        [Fact]
+        public void GetMapImage_Should_Include_HttpGetAttribute()
+        {
+            var t = _controller.GetType();
+            t.GetMethod("GetMapImage")
+             .Should().BeDecoratedWith<HttpGetAttribute>()
+             .Which.Template.Should().Be("session/{sessionId}/maze/{mazeId}");
+        }
+
+        [Fact]
+        public async void GetMapImage_Should_Call_IMazebotSolver_GetMapImage()
+        {
+            var service = Substitute.For<IMazebotSolver>();
+            service.GetMapImage(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()).Returns(new MazebotSolverImageResponse { Image = new byte[0], ContentType = "application/json" });
+
+            var sessionId = "sessionId";
+            var mazeId = "mazeId";
+
+            await _controller.GetMapImage(service, sessionId, mazeId);
+
+            await service.Received(1).GetMapImage(sessionId, mazeId, false);
+        }
+
+        [Fact]
+        public async void GetMapImage_Should_Return_Correctly()
+        {
+            var service = Substitute.For<IMazebotSolver>();
+            var response = new MazebotSolverImageResponse
+            {
+                Image = new byte[] {1,2,3},
+                ContentType = "application/json"
+            };
+            service.GetMapImage(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()).Returns(response);
+
+            var actual = await _controller.GetMapImage(service, "sessionId", "mazeId");
+
+            actual.Should().BeOfType<FileContentResult>();
+            actual.As<FileContentResult>().FileContents.Should().BeSameAs(response.Image);
+            actual.As<FileContentResult>().ContentType.Should().Be(response.ContentType);
+        }
+
+        [Fact]
+        public async void GetMapImage_Should_Return_Correctly_For_NonExisting_SessionId()
+        {
+            var service = Substitute.For<IMazebotSolver>();
+            service.GetMapImage(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()).Returns((MazebotSolverImageResponse) null);
+
+            var actual = await _controller.GetMapImage(service, "sessionId", "mazeId");
+
+            actual.Should().BeOfType<NotFoundResult>();
+        }
+
+        [Fact]
+        public void GetMapSolution_Should_Include_HttpGetAttribute()
+        {
+            var t = _controller.GetType();
+            t.GetMethod("GetMapSolution")
+             .Should().BeDecoratedWith<HttpGetAttribute>()
+             .Which.Template.Should().Be("session/{sessionId}/solution/{mazeId}");
+        }
+
+        [Fact]
+        public async void GetMapSolution_Should_Call_IMazebotSolver_GetMapImage()
+        {
+            var service = Substitute.For<IMazebotSolver>();
+            service.GetMapImage(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()).Returns(new MazebotSolverImageResponse { Image = new byte[0], ContentType = "application/json" });
+
+            var sessionId = "sessionId";
+            var mazeId = "mazeId";
+
+            await _controller.GetMapSolution(service, sessionId, mazeId);
+
+            await service.Received(1).GetMapImage(sessionId, mazeId, true);
+        }
+
+        [Fact]
+        public async void GetMapSolution_Should_Return_Correctly()
+        {
+            var service = Substitute.For<IMazebotSolver>();
+            var response = new MazebotSolverImageResponse
+            {
+                Image = new byte[] {1,2,3},
+                ContentType = "application/json"
+            };
+            service.GetMapImage(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()).Returns(response);
+
+            var actual = await _controller.GetMapSolution(service, "sessionId", "mazeId");
+
+            actual.Should().BeOfType<FileContentResult>();
+            actual.As<FileContentResult>().FileContents.Should().BeSameAs(response.Image);
+            actual.As<FileContentResult>().ContentType.Should().Be(response.ContentType);
+        }
+
+        [Fact]
+        public async void GetMapSolution_Should_Return_Correctly_For_NonExisting_SessionId()
+        {
+            var service = Substitute.For<IMazebotSolver>();
+            service.GetMapImage(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>()).Returns((MazebotSolverImageResponse) null);
+
+            var actual = await _controller.GetMapSolution(service, "sessionId", "mazeId");
+
+            actual.Should().BeOfType<NotFoundResult>();
+        }
     }
 }

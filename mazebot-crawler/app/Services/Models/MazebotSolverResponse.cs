@@ -7,10 +7,9 @@ namespace MazebotCrawler.Services.Models
     {
         public MazebotSolverResponse(string sessionId, MazebotResponse maze, NavigationDetails solution, MazebotResult result)
         {
+            MazeId = Guid.NewGuid().ToString();
             SessionId = sessionId;
             MazePath = maze?.MazePath;
-            MazeMap = maze != null ? MapHelper.ConvertToString(maze.Map) : null;
-            Directions = solution?.PathTaken;
             DirectionsResult = result?.Result;
             Message = result?.Message;
             Elapsed = result?.Elapsed ?? 0;
@@ -27,10 +26,9 @@ namespace MazebotCrawler.Services.Models
             Result = result;
         }
 
+        public string MazeId { get; set; }
         public string SessionId { get; set; }
         public string MazePath { get; set; }
-        public string MazeMap { get; set; }
-        public string Directions { get; set; }
         public string DirectionsResult { get; set; }
         public string Message { get; set; }
         public decimal Elapsed { get; set; }
@@ -42,15 +40,19 @@ namespace MazebotCrawler.Services.Models
         public string RawSolution { get; set; }
         public string RawResult { get; set; }
 
-        private MazebotResponse Maze { get; set; }
-        private NavigationDetails Solution { get; set; }
-        private MazebotResult Result { get; set; }
+        [JsonIgnore]
+        internal MazebotResponse Maze { get; set; }
+        [JsonIgnore]
+        internal NavigationDetails Solution { get; set; }
+        [JsonIgnore]
+        internal MazebotResult Result { get; set; }
 
         public MazebotSolverResponseSummary CreateSummary()
         {
             return new MazebotSolverResponseSummary
             {
                 SessionId = SessionId,
+                MazeId = MazeId,
                 MazePath = MazePath,
                 Message = Message,
                 NextMaze = NextMaze,

@@ -4,7 +4,7 @@ Parses the details returned by the [mazebot API](https://github.com/noops-challe
 
 The API exposes a couple of endpoints:
 
-### `GET /api/mazebotcrawler/solve/random`
+### `POST /api/mazebotcrawler/solve/random`
 Calls the mazebot API `https://api.noopschallenge.com/mazebot/random` to get a random maze, attempts to solve it, and posts the solution to the provided end point.<br /><br />NOTE: The response includes a `sessionId` property that can be used to query the details of the operation.
 
 | Parameters | Description |
@@ -19,39 +19,56 @@ Calls the mazebot API `https://api.noopschallenge.com/mazebot/race/start` to log
 |--------------|-------------|
 | login (string) | Sent to the mazebot API as part of the `/mazebot/start` request. |
 
-### `POST /api/mazebotcrawler/race/result/{sessionId}`
+### `GET /api/mazebotcrawler/race/result/{sessionId}`
 Retrieves the status of the race associated with the `sessionId`.
 
 | Route | Description |
 |-------|-------------|
 | sessionId (string) | Identifier for looking up the result of the race. The value can be found as a property of the response from the `/api/mazecrawler/race/start` endpoint. |
 
-### `POST /api/mazebotcrawler/session/{sessionId}/summary`
+### `GET /api/mazebotcrawler/session/{sessionId}/summary`
 Retrieves the brief summary of an operation associated with the `sessionId`.
 
 | Route | Description |
 |-------|-------------|
 | sessionId (string) | Identifier for looking up a brief summary of an operation. The value can be found as a property of the response from either the `/api/mazecrawler/solve/random` or `/api/mazecrawler/race/start` endpoints. |
 
-### `POST /api/mazebotcrawler/session/{sessionId}/status`
+### `GET /api/mazebotcrawler/session/{sessionId}/status`
 Retrieves the detailed status of an operation associated with the `sessionId`.
 
 | Route | Description |
 |-------|-------------|
 | sessionId (string) | Identifier for looking up the complete details of an operation. The value can be found as a property of the response from either the `/api/mazecrawler/solve/random` or `/api/mazecrawler/race/start` endpoints. |
 
+### `GET /api/mazebotcrawler/session/{sessionId}/maze/{mazeId}`
+Retrieves an image of the maze from a particular operation with `mazeId` that is associated with the `sessionId`.
+
+| Route | Description |
+|-------|-------------|
+| sessionId (string) | Identifier for the session. The value can be found as a property of the response from either the `/api/mazecrawler/solve/random` or `/api/mazecrawler/race/start` endpoints. |
+| mazeId (string) | Identifier for a specific operation in the session. The value can be found as a property of the response from either the `/api/mazecrawler/solve/random` or `/api/mazecrawler/race/start` endpoints. |
+
+### `GET /api/mazebotcrawler/session/{sessionId}/solution/{mazeId}`
+Retrieves an image of the solution to the maze from a particular operation with `mazeId` that is associated with the `sessionId`.
+
+| Route | Description |
+|-------|-------------|
+| sessionId (string) | Identifier for the session. The value can be found as a property of the response from either the `/api/mazecrawler/solve/random` or `/api/mazecrawler/race/start` endpoints. |
+| mazeId (string) | Identifier for a specific operation in the session. The value can be found as a property of the response from either the `/api/mazecrawler/solve/random` or `/api/mazecrawler/race/start` endpoints. |
+
 ### Sample
 
 **Solve a random maze**
 
 Request:<br />
-`GET /api/mazecrawler/solve/random`
+`POST /api/mazecrawler/solve/random`
 
 Response<br />
 200
 ```json
 {
   "sessionId": "98b46c94-668c-491d-8bf4-86c58a7c88e2",
+  "mazeId": "e38c578a-6105-4dff-b024-6d41201d5bde",
   "mazePath": "/mazebot/mazes/...",
   "message": "...",
   "nextMaze": null,
@@ -112,7 +129,7 @@ Response<br />
 **Retrieve summary of an operation**
 
 Request:<br />
-`GET /api/mazecrawler/session/98b46c94-668c-491d-8bf4-86c58a7c88e2/summary`
+`GET /api/mazecrawler/session/fd71643b-9ea4-4b23-834c-0f9a5035b3e2/summary`
 
 Response<br />
 200
@@ -120,6 +137,7 @@ Response<br />
 [
   {
     "sessionId": "fd71643b-9ea4-4b23-834c-0f9a5035b3e2",
+    "mazeId": "4c2dd3d5-f498-417a-8ea0-d51919ea72ba",
     "mazePath": "/mazebot/race/...",
     "message": "...",
     "nextMaze": null,
@@ -127,6 +145,7 @@ Response<br />
   },
   {
     "sessionId": "fd71643b-9ea4-4b23-834c-0f9a5035b3e2",
+    "mazeId": "d45bcd8e-99f3-478c-b72a-c3113a0596fb",
     "mazePath": "/mazebot/race/...",
     "message": null,
     "nextMaze": "/mazebot/race/...",
@@ -138,6 +157,7 @@ Response<br />
   ...,
   {
     "sessionId": "fd71643b-9ea4-4b23-834c-0f9a5035b3e2",
+    "mazeId": "3beac5ae-e016-4dde-9ab1-dff1595ce48c",
     "mazePath": "/mazebot/race/...",
     "message": null,
     "nextMaze": "/mazebot/race/...",
@@ -160,9 +180,8 @@ Response<br />
     "sessionId": "98b46c94-668c-491d-8bf4-86c58a7c88e2",
     "response": {
       "sessionId": "98b46c94-668c-491d-8bf4-86c58a7c88e2",
+      "mazeId": "e38c578a-6105-4dff-b024-6d41201d5bde",
       "mazePath": "/mazebot/mazes/...",
-      "mazeMap": "...",
-      "directions": "...",
       "directionsResult": "success",
       "message": "...",
       "elapsed": 283,
@@ -176,3 +195,21 @@ Response<br />
   }
 ]
 ```
+
+**Retrieve maze image used by an operation**
+
+Request:<br />
+`GET /api/mazecrawler/session/98b46c94-668c-491d-8bf4-86c58a7c88e2/maze/e38c578a-6105-4dff-b024-6d41201d5bde`
+
+Response<br />
+200<br />
+![maze](https://i.imgur.com/KwKYftO.png)
+
+**Retrieve maze solution image used by an operation**
+
+Request:<br />
+`GET /api/mazecrawler/session/98b46c94-668c-491d-8bf4-86c58a7c88e2/solution/e38c578a-6105-4dff-b024-6d41201d5bde`
+
+Response<br />
+200<br />
+![solution](https://i.imgur.com/oNtH2gk.gif)

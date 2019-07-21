@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using SixLabors.ImageSharp;
 using MazebotCrawler.Crawlies;
 using MazebotCrawler.Repositories;
 using MazebotCrawler.Repositories.Models;
@@ -16,6 +18,7 @@ namespace MazebotCrawler.Services
         Task<MazebotCertificate> GetRaceStatus(string sessionId);
         Task<IEnumerable<MazebotSolverStatus>> GetHistory(string sessionId);
         Task<IEnumerable<MazebotSolverResponseSummary>> GetHistorySummary(string sessionId);
+        Task<MazebotSolverImageResponse> GetMapImage(string sessionId, string mazeId, bool includeSolution);
     }
 
     public class MazebotSolver : IMazebotSolver
@@ -23,12 +26,14 @@ namespace MazebotCrawler.Services
         private readonly INoOpsApiClient _apiClient;
         private readonly IMazeCrawlerQueen _queen;
         private readonly IMazebotSolverStatusRepository _repository;
+        private readonly IMazeImager _imager;
 
-        public MazebotSolver(INoOpsApiClient apiClient, IMazeCrawlerQueen queen, IMazebotSolverStatusRepository repository)
+        public MazebotSolver(INoOpsApiClient apiClient, IMazeCrawlerQueen queen, IMazebotSolverStatusRepository repository, IMazeImager imager)
         {
             _apiClient = apiClient;
             _queen = queen;
             _repository = repository;
+            _imager = imager;
         }
 
         public async Task<MazebotSolverResponseSummary> SolveRandom(int? minSize, int? maxSize)
@@ -77,6 +82,43 @@ namespace MazebotCrawler.Services
         {
             var list = await GetHistory(sessionId);
             var response = list.Select(i => i.Response.CreateSummary());
+            return response;
+        }
+
+        public async Task<MazebotSolverImageResponse> GetMapImage(string sessionId, string mazeId, bool includeSolution)
+        {
+            var session = await _repository.Get(sessionId);
+            if (!session.Any()) { return null; }
+
+            var maze = session.SingleOrDefault(r => string.Equals(r.Response?.MazeId, mazeId));
+            if (maze == null) { return null; }
+
+            var response = new MazebotSolverImageResponse();
+            var map = new Map(maze.Response.Maze.Map);
+            var start = maze.Response.Maze.StartingPosition;
+            var solution = maze.Response.Solution.PathTaken;
+
+            using(var image = _imager.GetImage(map, start[0], start[1], solution, includeSolution))
+            {
+                if (image == null) { return null; }
+
+                using (var stream = new MemoryStream())
+                {
+                    if(image.Frames.Count > 1)
+                    {
+                        image.SaveAsGif(stream);
+                        response.ContentType = "image/gif";
+                    }
+                    else
+                    {
+                        image.SaveAsPng(stream);
+                        response.ContentType = "image/png";
+                    }
+
+                    response.Image = stream.ToArray();
+                }
+            }
+
             return response;
         }
 

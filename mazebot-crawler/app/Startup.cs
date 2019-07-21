@@ -34,6 +34,7 @@ namespace MazebotCrawler
                 .AddTransient<IApiClient, ApiClient>()
                 .AddTransient<INoOpsApiClient, NoOpsApiClient>()
                 .AddTransient<IMazebotSolver, MazebotSolver>()
+                .AddTransient<IMazeImager, MazeImager>()
 
                 .AddTransient<IMazeCrawlerQueen, MazeCrawlerQueen>()
                 .AddTransient<IMazeCrawlerSpawner, MazeCrawlerSpawner>()

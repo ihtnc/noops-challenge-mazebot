@@ -50,5 +50,23 @@ namespace MazebotCrawler.Controllers
 
             return new OkObjectResult(response);
         }
+
+        [HttpGet("session/{sessionId}/maze/{mazeId}")]
+        public async Task<ActionResult> GetMapImage([FromServices] IMazebotSolver solver, string sessionId, string mazeId)
+        {
+            var response = await solver.GetMapImage(sessionId, mazeId, false);
+            if (response == null) { return new NotFoundResult(); }
+
+            return new FileContentResult(response.Image, response.ContentType);
+        }
+
+        [HttpGet("session/{sessionId}/solution/{mazeId}")]
+        public async Task<ActionResult> GetMapSolution([FromServices] IMazebotSolver solver, string sessionId, string mazeId)
+        {
+            var response = await solver.GetMapImage(sessionId, mazeId, true);
+            if (response == null) { return new NotFoundResult(); }
+
+            return new FileContentResult(response.Image, response.ContentType);
+        }
     }
 }
